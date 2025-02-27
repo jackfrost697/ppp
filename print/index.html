@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile Print Solution</title>
+    <title>Print Solution</title>
     <style>
-        .print-link {
-            /* Original style preserved */
+        .print-btn {
             display: inline-block;
             padding: 12px 24px;
             background: #2196F3;
@@ -14,88 +13,36 @@
             text-decoration: none;
             border-radius: 4px;
             font-family: Arial, sans-serif;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <a class="print-link" onclick="handleMobilePrint()">Secure Print</a>
-    <img id="printSource" src="https://www.fineprintart.com/images/blog/starbucks/Starbucks-Logo-1987.svg" >
+    <a class="print-btn" id="printTrigger">Secure Print</a>
+    <img id="printSource" src="your-image.jpg" style="display:none;">
 
     <script>
-        // Modified configuration parameters
         const printConfig = {
             imageUrl: document.getElementById('printSource').src,
-            loadTimeout: 2000,    // Extended image loading wait
-            closeDelay: 2000      // Extended close delay
+            loadCheckInterval: 100,
+            printDelay: 300
         };
 
-        // Mobile print handler
-        function handleMobilePrint() {
-            // Create hidden iframe instead of new window
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
+        document.getElementById('printTrigger').addEventListener('click', function() {
+            const printFrame = document.createElement('iframe');
+            printFrame.style.display = 'none';
+            document.body.appendChild(printFrame);
 
-            const printDoc = iframe.contentDocument || 
-                           iframe.contentWindow.document;
-
-            // Build print document
-            printDoc.write(`
+            const frameDoc = printFrame.contentDocument || printFrame.contentWindow.document;
+            frameDoc.open();
+            frameDoc.write(`
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <style>
                         @media print {
-                            body { margin: 0!important; }
-                            img {
-                                width: 100%!important;
-                                height: auto!important;
-                                page-break-inside: avoid;
-                            }
-                        }
-                        @media screen {
-                            body { padding: 20px; }
-                            img { max-width: 100%; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <img src="${printConfig.imageUrl}" 
-                         onload="initiatePrint()">
-                    
-                    <script>
-                        function initiatePrint() {
-                            // Add user confirmation step
-                            if(confirm('Ready to print?')) {
-                                setTimeout(() => {
-                                    window.print();
-                                    setTimeout(() => window.close(), 
-                                    ${printConfig.closeDelay});
-                                }, 500);
-                            }
-                        }
-                    <\/script>
-                </body>
-                </html>
-            `);
-
-            // Handle loading failures
-            const img = printDoc.querySelector('img');
-            img.onerror = () => {
-                alert('Image loading failed. Please check network connection');
-                iframe.remove();
-            };
-
-            // Loading timeout handling
-            setTimeout(() => {
-                if (!printDoc.querySelector('img').complete) {
-                    alert('Image loading timeout');
-                    iframe.remove();
-                }
-            }, printConfig.loadTimeout);
-        }
-    </script>
-</body>
-</html>
+                            body { margin:0!important; }
+                            img { 
+                                width:100%!important;
+                                height:auto!important;
+                                page-break
