@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Professional Printing Solution</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Print Solution</title>
     <style>
-        /* Main page styles */
         .print-link {
+            /* Original style preserved */
             display: inline-block;
             padding: 12px 24px;
             background: #2196F3;
@@ -17,102 +18,83 @@
     </style>
 </head>
 <body>
-<a class="print-link" onclick="launchPrintWindow()">Secure Print</a>
-<img id="printSource" src="https://www.fineprintart.com/images/blog/starbucks/Starbucks-Logo-1987.svg" >
+    <a class="print-link" onclick="handleMobilePrint()">Secure Print</a>
+    <img id="printSource" src="https://www.fineprintart.com/images/blog/starbucks/Starbucks-Logo-1987.svg" >
 
     <script>
-
-        // Print configuration parameters
+        // Modified configuration parameters
         const printConfig = {
             imageUrl: document.getElementById('printSource').src,
-            timeout: 10,      // Image loading wait time
-            closeDelay: 10    // Close delay after printing
+            loadTimeout: 2000,    // Extended image loading wait
+            closeDelay: 2000      // Extended close delay
         };
 
+        // Mobile print handler
+        function handleMobilePrint() {
+            // Create hidden iframe instead of new window
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
 
+            const printDoc = iframe.contentDocument || 
+                           iframe.contentWindow.document;
 
-
-        // Secure print window control
-        function launchPrintWindow() {
-            try {
-                const printWindow = window.open('', '_blank', 'toolbar=0,scrollbars=0');
-                
-                // Build print document
-                const printDoc = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="UTF-8">
-                        <title>Print Preview</title>
-                        <style>
-                            /* Print styles - highest priority */
-                            @media print {
-                                body, html {
-                                    margin: 0 !important;
-                                    padding: 0 !important;
-                                }
-                                img {
-                                    width: 100% !important;
-                                    height: 100% !important;
-                                    object-fit: contain !important;
-                                    position: fixed !important;
-                                    top: 0 !important;
-                                    left: 0 !important;
-                                }
-                                /* Hide all helper elements */
-                                .print-controls, script, style {
-                                    display: none !important;
-                                    height: 0 !important;
-                                    width: 0 !important;
-                                }
+            // Build print document
+            printDoc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        @media print {
+                            body { margin: 0!important; }
+                            img {
+                                width: 100%!important;
+                                height: auto!important;
+                                page-break-inside: avoid;
                             }
-                            /* Screen preview styles */
-                            @media screen {
-
-                                body {
-                                    background: #ffffff;
-                                    display: flex;
-                                    justify-content: center;
-                                    align-items: center;
-                                    height: 90vh;
-                                }
-                                img {
-                                    width: 100%;
-                                    height: 100%;
-                                }
+                        }
+                        @media screen {
+                            body { padding: 20px; }
+                            img { max-width: 100%; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <img src="${printConfig.imageUrl}" 
+                         onload="initiatePrint()">
+                    
+                    <script>
+                        function initiatePrint() {
+                            // Add user confirmation step
+                            if(confirm('Ready to print?')) {
+                                setTimeout(() => {
+                                    window.print();
+                                    setTimeout(() => window.close(), 
+                                    ${printConfig.closeDelay});
+                                }, 500);
                             }
-                        </style>
-                    </head>
-                    <body>
-                        <img src="${printConfig.imageUrl}" 
-                             onload="window.__printReady=true">
-                        
-                        <script>
-                            // Auto print controller
-                            window.__printReady = false;
-                            const checkPrint = setInterval(() => {
-                                if (window.__printReady) {
-                                    clearInterval(checkPrint);
-                                    setTimeout(() => {
-                                        window.print();
-                                        setTimeout(() => window.close(), ${printConfig.closeDelay});
-                                    }, 100);
-                                }
-                            }, 100);
-                        <\/script>
-                    </body>
-                    </html>
-                `;
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `);
 
-                // Write and close document stream
-                printWindow.document.open();
-                printWindow.document.write(printDoc);
-                printWindow.document.close();
+            // Handle loading failures
+            const img = printDoc.querySelector('img');
+            img.onerror = () => {
+                alert('Image loading failed. Please check network connection');
+                iframe.remove();
+            };
 
-            } catch (e) {
-                alert('Please allow pop-ups to proceed with printing');
-                console.error('Print window blocked:', e);
-            }
+            // Loading timeout handling
+            setTimeout(() => {
+                if (!printDoc.querySelector('img').complete) {
+                    alert('Image loading timeout');
+                    iframe.remove();
+                }
+            }, printConfig.loadTimeout);
         }
     </script>
 </body>
